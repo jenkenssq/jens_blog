@@ -1,0 +1,187 @@
+/* 评论输入框容器 */
+.comment-input-container {
+    position: relative;
+    margin-bottom: 1.5rem;
+}
+
+.comment-input-container textarea {
+    border: 2px solid #ced4da;
+    border-radius: 8px;
+    padding: 12px 15px;
+    transition: all 0.3s ease;
+    font-size: 1rem;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    height: 120px;
+    min-height: 120px;
+    max-height: 120px;
+    overflow-y: auto;
+    resize: none;
+}
+
+.comment-input-container textarea:focus {
+    box-shadow: 0 5px 15px rgba(13, 110, 253, 0.15);
+    border-color: #0d6efd;
+    outline: none;
+    transform: translateY(-2px);
+}
+
+.comment-input-container textarea:hover {
+    border-color: #0d6efd;
+}
+
+.comment-input-decoration {
+    position: absolute;
+    bottom: -5px;
+    left: 10%;
+    width: 80%;
+    height: 3px;
+    background: linear-gradient(90deg, #0d6efd, #6610f2, #0d6efd);
+    border-radius: 3px;
+    transform: scaleX(0);
+    transition: transform 0.3s ease;
+    opacity: 0;
+}
+
+.comment-input-container textarea:focus + .comment-input-decoration {
+    transform: scaleX(1);
+    opacity: 1;
+}
+
+/* 按钮涟漪效果 */
+.btn-ripple {
+    position: relative;
+    overflow: hidden;
+    transform: translate3d(0, 0, 0);
+}
+
+.btn-ripple:after {
+    content: "";
+    display: block;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    background-image: radial-gradient(circle, #fff 10%, transparent 10.01%);
+    background-repeat: no-repeat;
+    background-position: 50%;
+    transform: scale(10, 10);
+    opacity: 0;
+    transition: transform 0.5s, opacity 1s;
+}
+
+.btn-ripple:active:after {
+    transform: scale(0, 0);
+    opacity: 0.3;
+    transition: 0s;
+}
+
+/* 评论按钮容器 */
+#comment-button-container {
+    text-align: center;
+    padding: 1rem;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    transition: all 0.3s ease;
+}
+
+#comment-button-container:hover {
+    background-color: #e9ecef;
+}
+
+#show-comment-form-btn {
+    padding: 0.5rem 2rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+#show-comment-form-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(13, 110, 253, 0.2);
+}
+
+#comment-form {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+#cancel-comment-btn {
+    transition: all 0.2s ease;
+}
+
+#cancel-comment-btn:hover {
+    background-color: #f8d7da;
+    border-color: #dc3545;
+    color: #dc3545;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 处理输入框在移动设备上的响应式调整 */
+@media (max-width: 576px) {
+    .comment-input-container textarea {
+        padding: 10px;
+        font-size: 0.9rem;
+    }
+}
+
+/* 用户头像样式 */
+.navbar .nav-item.dropdown .dropdown-toggle img {
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.navbar .nav-item.dropdown .dropdown-toggle:hover img {
+    border-color: #fff;
+    transform: scale(1.1);
+}
+
+.navbar .dropdown-menu {
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    border: none;
+    border-radius: 8px;
+    animation: dropdownFadeIn 0.2s ease-in-out;
+}
+
+.navbar .dropdown-item {
+    padding: 0.5rem 1rem;
+    transition: all 0.2s ease;
+}
+
+.navbar .dropdown-item:hover {
+    background-color: #f8f9fa;
+    transform: translateX(5px);
+}
+
+@keyframes dropdownFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 文章列表作者头像 */
+.post-card .author-avatar {
+    width: 20px;
+    height: 20px;
+    object-fit: cover;
+    transition: all 0.3s ease;
+}
+
+.post-card .author-avatar:hover {
+    transform: scale(1.2);
+} 

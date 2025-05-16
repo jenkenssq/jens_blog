@@ -1,0 +1,207 @@
+{% extends "blog/base.html" %}
+{% block title %}注册 - 个人博客{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-user-plus me-2"></i>注册新账号
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-5 d-none d-md-block">
+                        <div class="text-center py-5">
+                            <i class="fas fa-users fa-7x text-primary mb-4"></i>
+                            <h4>加入我们</h4>
+                            <p class="text-muted">创建账号后，您可以发布自己的文章，与他人分享您的知识和创意。</p>
+                        </div>
+                    </div>
+                    <div class="col-md-7">
+                        <form method="POST">
+                            {% csrf_token %}
+                            
+                            <div class="mb-3">
+                                <label for="{{ form.username.id_for_label }}" class="form-label fw-bold">
+                                    <i class="fas fa-user me-1"></i>用户名
+                                </label>
+                                {{ form.username.errors }}
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                    <input type="text" class="form-control {% if form.username.errors %}is-invalid{% endif %}" 
+                                        id="{{ form.username.id_for_label }}" name="{{ form.username.html_name }}"
+                                        placeholder="创建用户名">
+                                </div>
+                                <div class="form-text">
+                                    <i class="fas fa-info-circle me-1"></i>必填。包含字母，数字和@/./+/-/_符号。
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="{{ form.email.id_for_label }}" class="form-label fw-bold">
+                                    <i class="fas fa-envelope me-1"></i>电子邮件
+                                </label>
+                                {{ form.email.errors }}
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                                    <input type="email" class="form-control {% if form.email.errors %}is-invalid{% endif %}" 
+                                        id="{{ form.email.id_for_label }}" name="{{ form.email.html_name }}"
+                                        placeholder="example@domain.com">
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="{{ form.verification_code.id_for_label }}" class="form-label fw-bold">
+                                    <i class="fas fa-shield-alt me-1"></i>验证码
+                                </label>
+                                {{ form.verification_code.errors }}
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-shield-alt"></i></span>
+                                    <input type="text" class="form-control {% if form.verification_code.errors %}is-invalid{% endif %}" 
+                                        id="{{ form.verification_code.id_for_label }}" name="{{ form.verification_code.html_name }}"
+                                        placeholder="请输入验证码">
+                                    <button type="button" id="send-code-btn" class="btn btn-outline-primary">
+                                        发送验证码
+                                    </button>
+                                </div>
+                                <div class="form-text" id="verification-message">
+                                    <i class="fas fa-info-circle me-1"></i>请输入发送到您邮箱的验证码
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="{{ form.password1.id_for_label }}" class="form-label fw-bold">
+                                    <i class="fas fa-lock me-1"></i>密码
+                                </label>
+                                {{ form.password1.errors }}
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                    <input type="password" class="form-control {% if form.password1.errors %}is-invalid{% endif %}" 
+                                        id="{{ form.password1.id_for_label }}" name="{{ form.password1.html_name }}"
+                                        placeholder="设置密码">
+                                </div>
+                                <div class="form-text">
+                                    <ul class="small ps-3 mb-0">
+                                        <li>密码必须包含至少8个字符</li>
+                                        <li>密码不能全部为数字</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <label for="{{ form.password2.id_for_label }}" class="form-label fw-bold">
+                                    <i class="fas fa-lock me-1"></i>确认密码
+                                </label>
+                                {{ form.password2.errors }}
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                    <input type="password" class="form-control {% if form.password2.errors %}is-invalid{% endif %}" 
+                                        id="{{ form.password2.id_for_label }}" name="{{ form.password2.html_name }}"
+                                        placeholder="再次输入密码">
+                                </div>
+                                <div class="form-text">
+                                    <i class="fas fa-info-circle me-1"></i>请输入与上面相同的密码，以便验证。
+                                </div>
+                            </div>
+                            
+                            <div class="d-grid mb-3">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-user-plus me-1"></i>创建账号
+                                </button>
+                            </div>
+                            
+                            <div class="text-center">
+                                <span>已有账号？</span>
+                                <a href="{% url 'login' %}" class="text-decoration-none">立即登录</a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extrajs %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const sendCodeBtn = document.getElementById('send-code-btn');
+        const emailInput = document.getElementById('{{ form.email.id_for_label }}');
+        const verificationMessage = document.getElementById('verification-message');
+        
+        // 60秒倒计时功能
+        let countdown = 0;
+        let timer = null;
+        
+        function startCountdown() {
+            countdown = 60;
+            sendCodeBtn.disabled = true;
+            timer = setInterval(function() {
+                countdown--;
+                sendCodeBtn.textContent = `${countdown}秒后重新发送`;
+                
+                if (countdown <= 0) {
+                    clearInterval(timer);
+                    sendCodeBtn.disabled = false;
+                    sendCodeBtn.textContent = '发送验证码';
+                }
+            }, 1000);
+        }
+        
+        // 发送验证码点击事件
+        sendCodeBtn.addEventListener('click', function() {
+            const email = emailInput.value.trim();
+            
+            // 验证邮箱格式
+            if (!email) {
+                verificationMessage.innerHTML = '<i class="fas fa-exclamation-circle me-1 text-danger"></i>请输入邮箱地址';
+                emailInput.focus();
+                return;
+            }
+            
+            // 邮箱格式验证
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                verificationMessage.innerHTML = '<i class="fas fa-exclamation-circle me-1 text-danger"></i>请输入有效的邮箱地址';
+                emailInput.focus();
+                return;
+            }
+            
+            // 禁用按钮，显示加载状态
+            sendCodeBtn.disabled = true;
+            sendCodeBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> 发送中...';
+            
+            // 发送AJAX请求
+            fetch('{% url "blog:send_verification_code" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: `email=${encodeURIComponent(email)}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // 成功发送
+                    verificationMessage.innerHTML = `<i class="fas fa-check-circle me-1 text-success"></i>${data.message}`;
+                    startCountdown(); // 开始倒计时
+                } else {
+                    // 发送失败
+                    verificationMessage.innerHTML = `<i class="fas fa-exclamation-circle me-1 text-danger"></i>${data.message}`;
+                    sendCodeBtn.disabled = false;
+                    sendCodeBtn.textContent = '重新发送';
+                }
+            })
+            .catch(error => {
+                // 请求错误
+                verificationMessage.innerHTML = '<i class="fas fa-exclamation-circle me-1 text-danger"></i>发送验证码失败，请稍后重试';
+                sendCodeBtn.disabled = false;
+                sendCodeBtn.textContent = '重新发送';
+                console.error('发送验证码错误:', error);
+            });
+        });
+    });
+</script>
+{% endblock %} 

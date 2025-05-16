@@ -1,0 +1,186 @@
+{% extends "blog/base.html" %}
+{% load static %}
+{% block title %}{{ user.username }} - 个人中心{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h4 class="card-title mb-0"><i class="fas fa-user-circle me-2"></i>个人资料</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-4 text-center mb-4">
+                            <div class="avatar-container mb-3">
+                                {% if user.profile.avatar %}
+                                    <img src="{{ user.profile.avatar.url }}" alt="{{ user.username }}" class="img-fluid rounded-circle avatar-img">
+                                {% else %}
+                                    <img src="https://ui-avatars.com/api/?name={{ user.username }}&background=random&size=200" alt="{{ user.username }}" class="img-fluid rounded-circle avatar-img">
+                                {% endif %}
+                            </div>
+                            <div class="custom-file">
+                                <label class="btn btn-outline-primary" for="id_avatar">
+                                    <i class="fas fa-camera me-1"></i>更换头像
+                                </label>
+                                {{ p_form.avatar }}
+                            </div>
+                            <small class="form-text text-muted mt-2">点击按钮选择图片</small>
+                        </div>
+                        <div class="col-md-8">
+                            <h5 class="border-bottom pb-2 mb-3">基本信息</h5>
+                            <div class="mb-3">
+                                <label for="id_username">用户名</label>
+                                {{ u_form.username }}
+                            </div>
+                            <div class="mb-3">
+                                <label for="id_email">邮箱</label>
+                                {{ u_form.email }}
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="id_first_name">名字</label>
+                                        {{ u_form.first_name }}
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="id_last_name">姓氏</label>
+                                        {{ u_form.last_name }}
+                                    </div>
+                                </div>
+                            </div>
+                            <h5 class="border-bottom pb-2 mb-3 mt-4">详细信息</h5>
+                            <div class="mb-3">
+                                <label for="id_location">所在地</label>
+                                {{ p_form.location }}
+                            </div>
+                            <div class="mb-3">
+                                <label for="id_website">个人网站</label>
+                                {{ p_form.website }}
+                            </div>
+                            <div class="mb-3">
+                                <label for="id_bio">个人简介</label>
+                                {{ p_form.bio }}
+                            </div>
+                            <div class="text-end mt-4">
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    <i class="fas fa-save me-2"></i>保存修改
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="card-title mb-0"><i class="fas fa-file-alt me-2"></i>我的文章</h4>
+            </div>
+            <div class="card-body">
+                {% if user_posts %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>标题</th>
+                                    <th>发布时间</th>
+                                    <th>阅读量</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for post in user_posts %}
+                                    <tr>
+                                        <td>
+                                            <a href="{% url 'blog:post_detail' post.pk %}" class="text-decoration-none">
+                                                {{ post.title }}
+                                            </a>
+                                        </td>
+                                        <td>{{ post.created_time|date:"Y-m-d H:i" }}</td>
+                                        <td>{{ post.views }}</td>
+                                        <td>
+                                            <a href="{% url 'blog:post_update' post.pk %}" class="btn btn-sm btn-outline-success me-1">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="{% url 'blog:post_delete' post.pk %}" class="btn btn-sm btn-outline-danger">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>您还没有发布任何文章
+                    </div>
+                    <a href="{% url 'blog:post_create' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-edit me-1"></i>写第一篇文章
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        {% include 'blog/includes/sidebar.html' %}
+    </div>
+</div>
+
+<style>
+    .avatar-container {
+        width: 200px;
+        height: 200px;
+        margin: 0 auto;
+        overflow: hidden;
+        border-radius: 50%;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .avatar-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    #id_avatar {
+        display: none;
+    }
+    
+    /* 响应式调整 */
+    @media (max-width: 767px) {
+        .avatar-container {
+            width: 120px;
+            height: 120px;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 头像预览
+        const avatarInput = document.getElementById('id_avatar');
+        const avatarImg = document.querySelector('.avatar-img');
+        
+        if (avatarInput && avatarImg) {
+            avatarInput.addEventListener('change', function() {
+                if (this.files && this.files[0]) {
+                    const reader = new FileReader();
+                    
+                    reader.onload = function(e) {
+                        avatarImg.src = e.target.result;
+                    }
+                    
+                    reader.readAsDataURL(this.files[0]);
+                }
+            });
+        }
+    });
+</script>
+{% endblock %} 

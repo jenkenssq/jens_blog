@@ -1,0 +1,267 @@
+{% extends "blog/base.html" %}
+{% block title %}{{ object.title }} - 个人博客{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <article class="card mb-4">
+            <div class="card-body">
+                <h1 class="card-title">{{ object.title }}</h1>
+                <div class="d-flex flex-wrap align-items-center text-muted small mb-3">
+                    <span class="me-3">
+                        <i class="fas fa-user me-1"></i>{{ object.author.username }}
+                    </span>
+                    <span class="me-3">
+                        <i class="far fa-calendar-alt me-1"></i>
+                        发布于 {{ object.created_time|date:"Y-m-d H:i" }}
+                    </span>
+                    {% if object.modified_time != object.created_time %}
+                        <span class="me-3">
+                            <i class="fas fa-edit me-1"></i>
+                            更新于 {{ object.modified_time|date:"Y-m-d H:i" }}
+                        </span>
+                    {% endif %}
+                    <span class="me-3">
+                        <i class="far fa-eye me-1"></i>{{ object.views }} 阅读
+                    </span>
+                    {% if object.category %}
+                        <span>
+                            <i class="fas fa-folder me-1"></i>
+                            <a href="{% url 'blog:category' object.category.pk %}" class="text-decoration-none text-muted">
+                                {{ object.category.name }}
+                            </a>
+                        </span>
+                    {% endif %}
+                </div>
+                
+                {% if object.tags.all %}
+                    <div class="mb-3">
+                        <i class="fas fa-tags me-1 text-muted"></i>
+                        {% for tag in object.tags.all %}
+                            <a href="{% url 'blog:tag' tag.pk %}" class="text-decoration-none">
+                                <span class="badge bg-secondary">{{ tag.name }}</span>
+                            </a>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                
+                <hr>
+                <div class="article-content">
+                    {{ object.content|linebreaks }}
+                </div>
+            </div>
+        </article>
+        
+        {% if user.is_authenticated and user == object.author %}
+        <div class="d-flex mb-4">
+            <a href="{% url 'blog:post_update' object.pk %}" class="btn btn-outline-success me-2">
+                <i class="fas fa-edit me-1"></i>编辑文章
+            </a>
+            <a href="{% url 'blog:post_delete' object.pk %}" class="btn btn-outline-danger">
+                <i class="fas fa-trash-alt me-1"></i>删除文章
+            </a>
+        </div>
+        {% endif %}
+        
+        <!-- 评论区 -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-comments me-2"></i>评论区
+            </div>
+            <div class="card-body">
+                {% if user.is_authenticated %}
+                    <form method="post" action="{% url 'blog:add_comment' object.pk %}">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            {{ comment_form.content }}
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane me-1"></i>发表评论
+                        </button>
+                    </form>
+                {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        请 <a href="{% url 'login' %}" class="alert-link">登录</a> 后发表评论
+                    </div>
+                {% endif %}
+                
+                <hr>
+                
+                <div class="comments-list mt-4">
+                    <h5>
+                        <i class="fas fa-comment-dots me-2"></i>
+                        全部评论 ({{ comments.count }})
+                    </h5>
+                    
+                    {% for comment in comments %}
+                        <div class="comment mt-3">
+                            <div class="d-flex">
+                                <div class="me-3">
+                                    {% if comment.author.profile.avatar %}
+                                        <img src="{{ comment.author.profile.avatar.url }}" alt="{{ comment.author.username }}" 
+                                             class="rounded-circle" width="40" height="40" style="object-fit: cover;">
+                                    {% else %}
+                                        <img src="https://ui-avatars.com/api/?name={{ comment.author.username }}&background=random&size=40" 
+                                             alt="{{ comment.author.username }}" class="rounded-circle">
+                                    {% endif %}
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h6 class="mb-1">{{ comment.author.username }}</h6>
+                                        <small class="text-muted">{{ comment.created_time|date:"Y-m-d H:i" }}</small>
+                                    </div>
+                                    <p class="mb-1">{{ comment.content }}</p>
+                                    {% if user.is_authenticated %}
+                                        <div class="d-flex align-items-center">
+                                            <button class="btn btn-sm btn-link p-0 reply-btn me-3" data-comment-id="{{ comment.pk }}">
+                                                <i class="fas fa-reply me-1"></i>回复
+                                            </button>
+                                            {% if user == comment.author or user == object.author %}
+                                            <a href="{% url 'blog:delete_comment' comment.pk %}" class="btn btn-sm btn-link text-danger p-0" onclick="return confirm('确定要删除此评论吗？');">
+                                                <i class="fas fa-trash-alt me-1"></i>删除
+                                            </a>
+                                            {% endif %}
+                                        </div>
+                                        <div class="reply-form mt-2 d-none" id="reply-form-{{ comment.pk }}">
+                                            <form method="post" action="{% url 'blog:add_reply' comment.pk %}">
+                                                {% csrf_token %}
+                                                <div class="input-group">
+                                                    <textarea name="content" class="form-control form-control-sm" rows="2" placeholder="回复 {{ comment.author.username }}..."></textarea>
+                                                    <button type="submit" class="btn btn-sm btn-primary">
+                                                        <i class="fas fa-paper-plane"></i>
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- 回复列表 -->
+                            {% for reply in comment.comment_set.all %}
+                                <div class="reply ms-5 mt-2">
+                                    <div class="d-flex">
+                                        <div class="me-2">
+                                            {% if reply.author.profile.avatar %}
+                                                <img src="{{ reply.author.profile.avatar.url }}" alt="{{ reply.author.username }}" 
+                                                     class="rounded-circle" width="30" height="30" style="object-fit: cover;">
+                                            {% else %}
+                                                <img src="https://ui-avatars.com/api/?name={{ reply.author.username }}&background=random&size=30" 
+                                                     alt="{{ reply.author.username }}" class="rounded-circle">
+                                            {% endif %}
+                                        </div>
+                                        <div>
+                                            <div class="d-flex align-items-center">
+                                                <h6 class="mb-0 me-2">{{ reply.author.username }}</h6>
+                                                <small class="text-muted">{{ reply.created_time|date:"Y-m-d H:i" }}</small>
+                                            </div>
+                                            <p class="mb-0">{{ reply.content }}</p>
+                                            {% if user == reply.author or user == object.author %}
+                                            <a href="{% url 'blog:delete_comment' reply.pk %}" class="btn btn-sm btn-link text-danger p-0" onclick="return confirm('确定要删除此回复吗？');">
+                                                <i class="fas fa-trash-alt me-1"></i>删除
+                                            </a>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% empty %}
+                        <p class="text-muted mt-3">暂无评论，快来发表第一条评论吧！</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        <a href="{% url 'blog:home' %}" class="btn btn-primary">
+            <i class="fas fa-arrow-left me-1"></i>返回首页
+        </a>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-user me-2"></i>作者信息
+            </div>
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="me-3">
+                        {% if object.author.profile.avatar %}
+                            <img src="{{ object.author.profile.avatar.url }}" alt="{{ object.author.username }}" 
+                                 class="rounded-circle" width="60" height="60" style="object-fit: cover;">
+                        {% else %}
+                            <img src="https://ui-avatars.com/api/?name={{ object.author.username }}&background=random&size=60" 
+                                 alt="{{ object.author.username }}" class="rounded-circle">
+                        {% endif %}
+                    </div>
+                    <div>
+                        <h5 class="card-title mb-1">{{ object.author.username }}</h5>
+                        <p class="text-muted small mb-0">博客作者</p>
+                    </div>
+                </div>
+                <p class="card-text">
+                    此用户共发表了 <span class="badge bg-primary">{{ object.author.post_set.count }}</span> 篇文章
+                </p>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-share-alt me-2"></i>分享文章
+            </div>
+            <div class="card-body">
+                <div class="share-icon-container">
+                    <a href="#" id="share-wechat" class="share-icon wechat">
+                        <i class="fab fa-weixin fa-2x"></i>
+                        <span>微信</span>
+                    </a>
+                    <a href="#" id="share-weibo" class="share-icon weibo">
+                        <i class="fab fa-weibo fa-2x"></i>
+                        <span>微博</span>
+                    </a>
+                    <a href="#" id="share-qq" class="share-icon qq">
+                        <i class="fab fa-qq fa-2x"></i>
+                        <span>QQ</span>
+                    </a>
+                    <a href="#" id="share-link" class="share-icon link">
+                        <i class="fas fa-link fa-2x"></i>
+                        <span>复制链接</span>
+                    </a>
+                </div>
+                <div class="mt-3 text-center">
+                    <p class="small text-muted mb-0">分享好文章，传递好知识</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 评论回复JS -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 回复按钮点击事件
+        const replyBtns = document.querySelectorAll('.reply-btn');
+        replyBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const commentId = this.dataset.commentId;
+                const replyForm = document.getElementById('reply-form-' + commentId);
+                if (replyForm.classList.contains('d-none')) {
+                    // 隐藏所有回复表单
+                    document.querySelectorAll('.reply-form').forEach(form => {
+                        form.classList.add('d-none');
+                    });
+                    // 显示当前回复表单
+                    replyForm.classList.remove('d-none');
+                } else {
+                    replyForm.classList.add('d-none');
+                }
+            });
+        });
+    });
+</script>
+
+<!-- 引入社交分享JS -->
+{% load static %}
+<script src="{% static 'js/share.js' %}"></script>
+{% endblock %} 
